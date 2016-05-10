@@ -17,6 +17,7 @@
 package org.spockframework.runtime.extension.builtin;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -32,12 +33,12 @@ public class UnrollNameProvider implements NameProvider<IterationInfo> {
   private static final Pattern EXPRESSION_PATTERN = Pattern.compile("#([a-zA-Z_\\$]([\\w\\$\\.]|\\(\\))*)");
 
   private final FeatureInfo feature;
-  private final Matcher expressionMatcher;
-  private int iterationCount;
+  private final String namePattern;
+  private final AtomicInteger iterationCount = new AtomicInteger(0);
 
   public UnrollNameProvider(FeatureInfo feature, String namePattern) {
     this.feature = feature;
-    expressionMatcher = EXPRESSION_PATTERN.matcher(namePattern);
+    this.namePattern = namePattern;
   }
 
   // always returns a name
@@ -46,21 +47,25 @@ public class UnrollNameProvider implements NameProvider<IterationInfo> {
   }
 
   String nameFor(Map<String, Object> dataValues) {
+    Matcher expressionMatcher = EXPRESSION_PATTERN.matcher(namePattern);
+
     StringBuffer result = new StringBuffer();
     expressionMatcher.reset();
 
+    final int currentIteration = iterationCount.getAndIncrement();
+
     while (expressionMatcher.find()) {
       String expr = expressionMatcher.group(1);
-      String value = evaluateExpression(expr, dataValues);
+      String value = evaluateExpression(expr, dataValues, currentIteration);
       expressionMatcher.appendReplacement(result, Matcher.quoteReplacement(value));
     }
 
     expressionMatcher.appendTail(result);
-    iterationCount++;
+
     return result.toString();
   }
 
-  private String evaluateExpression(String expr, Map<String, Object> dataValues) {
+  private String evaluateExpression(String expr, Map<String, Object> dataValues, int currentIteration) {
     String[] exprParts = expr.split("\\.");
     String firstPart = exprParts[0];
     Object result;
@@ -68,7 +73,7 @@ public class UnrollNameProvider implements NameProvider<IterationInfo> {
     if (firstPart.equals("featureName")) {
       result = feature.getName();
     } else if (firstPart.equals("iterationCount")) {
-      result = String.valueOf(iterationCount);
+      result = String.valueOf(currentIteration);
     } else {
       if (dataValues.containsKey(firstPart)) {
         result = dataValues.get(firstPart);

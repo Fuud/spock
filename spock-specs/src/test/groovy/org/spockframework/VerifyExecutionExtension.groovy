@@ -72,5 +72,13 @@ class VerifyExecutionExtension extends AbstractAnnotationDrivenExtension<VerifyE
         invocation.proceed();
       }
     })
+    forceSequential(spec);
+  }
+
+  private static void forceSequential(SpecInfo spec) {
+    spec.setSupportParallelExecution(false);
+    for (FeatureInfo featureInfo : spec.getAllFeaturesInExecutionOrder()) {
+      featureInfo.setSupportParallelExecution(false);
+    }
   }
 }

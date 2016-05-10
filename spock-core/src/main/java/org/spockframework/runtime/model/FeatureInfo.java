@@ -25,6 +25,10 @@ public class FeatureInfo extends SpecElementInfo<SpecInfo, AnnotatedElement> {
 
   private boolean reportIterations = false;
 
+  private boolean supportParallelExecution = true;
+
+  private int retryCount = 0;
+
   public SpecInfo getSpec() {
     return getParent();
   }
@@ -98,6 +102,15 @@ public class FeatureInfo extends SpecElementInfo<SpecInfo, AnnotatedElement> {
     return dataProviders;
   }
 
+  public DataProviderInfo getDataProvider(String variableName) {
+    for (DataProviderInfo dataProvider : dataProviders) {
+      if (dataProvider.getDataVariables().get(0).equals(variableName)){
+        return dataProvider;
+      }
+    }
+    throw new IllegalArgumentException("There is no data provider for variable name "+variableName);
+  }
+
   public void addDataProvider(DataProviderInfo dataProvider) {
     dataProviders.add(dataProvider);
   }
@@ -112,6 +125,25 @@ public class FeatureInfo extends SpecElementInfo<SpecInfo, AnnotatedElement> {
 
   public void setReportIterations(boolean flag) {
     reportIterations = flag;
+  }
+
+  public boolean isSupportParallelExecution() {
+    return supportParallelExecution;
+  }
+
+  public void setSupportParallelExecution(boolean supportParallelExecution) {
+    this.supportParallelExecution = supportParallelExecution;
+  }
+
+  public int getRetryCount() {
+    return retryCount;
+  }
+
+  public void setRetryCount(int retryCount) {
+    if (retryCount < 0) {
+      throw new IllegalArgumentException("retry count can not be negative, but it is " + retryCount);
+    }
+    this.retryCount = retryCount;
   }
 
   @Nullable
